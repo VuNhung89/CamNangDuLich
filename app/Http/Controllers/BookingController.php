@@ -21,6 +21,11 @@ class BookingController extends Controller
     // Tạo booking mới
     public function store(Request $request)
     {
+        // Nếu chưa đăng nhập, trả lỗi 401 rõ ràng
+        if (!Auth::check()) {
+            return response()->json(['message' => 'Chưa đăng nhập'], 401);
+        }
+
         $data = $request->validate([
             'tour_id' => 'nullable|exists:tours,id',
             'hotel_id' => 'nullable|exists:hotels,id',
@@ -51,5 +56,20 @@ class BookingController extends Controller
 
         $booking->delete();
         return response()->json(['message' => 'Booking cancelled']);
+    }
+
+    //Xem chi tiết booking
+    public function myBookings()
+    {
+        $user = auth()->user();
+
+        $bookings = Booking::with(['tour', 'hotel'])
+            ->where('user_id', $user->id)
+            ->latest()
+            ->get();
+
+        return inertia('Bookings/MyBookings', [
+            'bookings' => $bookings
+        ]);
     }
 }
