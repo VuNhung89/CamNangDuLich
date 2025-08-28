@@ -15,7 +15,7 @@ class HotelController extends Controller
 
     public function show($id)
     {
-        return \App\Models\Hotel::with('location')->findOrFail($id);
+        return Hotel::with('location')->findOrFail($id);
     }
 
     public function store(Request $request)

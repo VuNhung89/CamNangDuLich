@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Post;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth; //dùng để lấy thông tin user đã đăng nhập
 use Illuminate\Support\Facades\Log;
@@ -18,32 +19,33 @@ class PostController extends Controller
     }
 
     //phương thức store (tạo mới dựa trên dữ liệu từ client)
-    public function store(Request $request)
-    {
 
+    public function store(Request $request): RedirectResponse
+    {
         $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'required|string',
-            'location' => 'nullable|string|max:255',
+            'location_id' => 'nullable|exists:locations,id',
             'image' => 'nullable|image|max:2048',
         ]);
 
-        /** @var \App\Models\User $user */
-        $user = Auth::user();
-        $post = $user->posts()->create([
+        $post = new Post([
             'title' => $request->title,
             'content' => $request->content,
-            'location_id' => $request->location,
+            'location_id' => $request->location_id,
+            'user_id' => auth()->id(),
         ]);
 
         if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('images/posts', 'public');
-            $post->image = $imagePath;
-            $post->save();
+            $path = $request->file('image')->store('uploads/posts', 'public');
+            $post->image = '/storage/' . $path;
         }
 
-        return response()->json($post, 201);
+        $post->save();
+
+        return back()->with('success', 'Đăng bài thành công!');
     }
+
     //phương thức show (xem chi tiết 1 bản ghi theo ID)
     public function show($id)
     {
@@ -81,11 +83,12 @@ class PostController extends Controller
     public function destroy(Post $post)
     {
         if ($post->user_id !== Auth::id()) {
-            return response()->json(['message' => 'Unauthorized'], 403);
+            return back()->withErrors(['message' => 'Unauthorized']);
         }
 
         $post->delete();
-        return response()->json(['message' => 'Post deleted']);
+
+        return back()->with('success', 'Post deleted');
     }
 
     //phương thức xóa bài viết bất kì dành cho admin
@@ -125,5 +128,10 @@ class PostController extends Controller
         $post = Post::findOrFail($id);
         $post->update(['status' => 'approved']);
         return response()->json(['message' => 'Bài viết đã được duyệt']);
+    }
+
+    public function userPosts(Request $request)
+    {
+        return response()->json(Post::with('location')->where('user_id', $request->user()->id)->latest()->get());
     }
 }

@@ -1,54 +1,42 @@
 <script setup>
-import { ref, onMounted } from 'vue';
-import { router, usePage, Link } from '@inertiajs/vue3'; // Sử dụng Inertia.js
+import { ref, onMounted, computed } from 'vue';
+import { usePage, Link } from '@inertiajs/vue3';
 import axios from 'axios';
 import Header from '@/Components/Header.vue';
 import Footer from '@/Components/Footer.vue';
 
-// Khởi tạo biến
-const user = ref(null);
+// ✅ Lấy user từ session (nếu cần hiển thị thông tin)
+const user = computed(() => usePage().props.auth.user);
+
+// ✅ Lấy eventId từ route props
+const { props } = usePage();
+const eventId = props.eventId;
+
+// ✅ State
 const event = ref(null);
 const loading = ref(true);
-const { props } = usePage(); // Lấy params từ Inertia
 
-// Lấy dữ liệu khi component được mount
+// ✅ Gọi API public để lấy chi tiết sự kiện
 onMounted(async () => {
-  const token = localStorage.getItem('auth_token');
-  if (!token) {
-    router.visit('/login');
-    return;
-  }
-
   try {
-    // Lấy thông tin user
-    const userRes = await axios.get('/api/user', {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    user.value = userRes.data;
-
-    // Lấy chi tiết sự kiện từ API
-    const eventRes = await axios.get(`/api/events/${props.eventId}`); // Dùng props.eventId
-    event.value = eventRes.data;
+    const res = await axios.get(`/api/events/${eventId}`);
+    event.value = res.data;
   } catch (err) {
-    if (err.response?.status === 401) {
-      localStorage.removeItem('auth_token');
-      router.visit('/login');
-    } else if (err.response?.status === 404) {
-      event.value = null; // Sự kiện không tồn tại
+    if (err.response?.status === 404) {
+      event.value = null;
     }
-    console.error('Lỗi khi tải dữ liệu:', err);
+    console.error('Lỗi khi tải sự kiện:', err);
   } finally {
     loading.value = false;
   }
 });
 
-// Hàm hỗ trợ
+// ✅ Helpers
+const formatDate = date => new Date(date).toLocaleDateString('vi-VN');
 const truncateText = (text, length) => {
   if (!text) return '';
   return text.length > length ? text.slice(0, length) + '...' : text;
 };
-
-const formatDate = date => new Date(date).toLocaleDateString('vi-VN');
 </script>
 
 <template>
@@ -87,7 +75,7 @@ const formatDate = date => new Date(date).toLocaleDateString('vi-VN');
             <!-- Event Description -->
             <div class="text-gray-700 text-base md:text-lg leading-relaxed mb-6">
               <h2 class="text-2xl font-semibold text-gray-800 mb-3">Mối quan hệ</h2>
-              <p>{{ event.description }}</p>
+              <p v-html="event.description"></p>
             </div>
             <!-- Action Button -->
             <div class="text-center">

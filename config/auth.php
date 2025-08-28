@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\User;
+
 return [
 
     'defaults' => [
@@ -21,13 +23,9 @@ return [
     'providers' => [
         'users' => [
             'driver' => 'eloquent',
-            'model' => App\Models\User::class,
+            'model' => User::class,
         ],
 
-        // 'users' => [
-        //     'driver' => 'database',
-        //     'table' => 'users',
-        // ],
     ],
 
     'passwords' => [

@@ -1,6 +1,5 @@
 <script setup>
 import { useForm } from '@inertiajs/vue3';
-import axios from 'axios';
 
 const form = useForm({
   name: '',
@@ -9,28 +8,17 @@ const form = useForm({
   password_confirmation: '',
 });
 
-const submit = async () => {
-  try {
-    const response = await axios.post('/api/register', {
-      name: form.name,
-      email: form.email,
-      password: form.password,
-      password_confirmation: form.password_confirmation,
-    });
-    localStorage.setItem('auth_token', response.data.token);
-    axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
-    form.reset('password', 'password_confirmation');
-    window.location.href = '/';
-  } catch (error) {
-    if (error.response && error.response.data) {
-      form.errors = error.response.data.errors || {
-        email: error.response.data.message || 'Đã có lỗi xảy ra.',
-      };
-    } else {
-      form.errors = { email: 'Đã có lỗi xảy ra. Vui lòng thử lại.' };
-    }
-  }
+const submit = () => {
+  form.post('/register', {
+    onSuccess: () => {
+      form.reset('password', 'password_confirmation');
+    },
+    onError: (errors) => {
+      form.errors = errors;
+    },
+  });
 };
+
 </script>
 
 <template>

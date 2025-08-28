@@ -14,10 +14,10 @@
         <!-- Hình ảnh -->
         <div v-if="post.image">
           <img
-            :src="`http://localhost:8000${post.image}`"
+            :src="fullImage(post.image)"
             alt="Hình ảnh bài viết"
             class="w-full h-96 object-cover rounded-lg"
-            @error="event => event.target.src = 'http://localhost:8000/images/placeholder.jpg'"
+            @error="event => event.target.src = fallbackImg"
           />
         </div>
 
@@ -30,23 +30,21 @@
         <!-- Người đăng -->
         <div>
           <h2 class="text-2xl font-semibold text-gray-800">Người đăng</h2>
-          <p class="text-gray-600 mt-2">{{ post.user ? post.user.name : 'Ẩn danh' }}</p>
+          <p class="text-gray-600 mt-2">{{ post.user?.name || 'Ẩn danh' }}</p>
         </div>
 
         <!-- Địa điểm -->
         <div v-if="post.location">
           <h2 class="text-2xl font-semibold text-gray-800">Địa điểm</h2>
           <div class="mt-2 p-4 bg-gray-50 rounded-lg border border-gray-200 flex items-start space-x-4">
-            <!-- Ảnh địa điểm -->
             <div v-if="post.location.image" class="flex-shrink-0">
               <img
-                :src="`http://localhost:8000${post.location.image}`"
+                :src="fullImage(post.location.image)"
                 alt="Hình ảnh địa điểm"
                 class="w-24 h-24 object-cover rounded-lg border border-gray-200"
-                @error="event => event.target.src = 'http://localhost:8000/images/placeholder.jpg'"
+                @error="event => event.target.src = fallbackImg"
               />
             </div>
-            <!-- Thông tin địa điểm -->
             <div class="flex-1">
               <a
                 :href="`/locations/${post.location.id}`"
@@ -64,14 +62,14 @@
         <!-- Ngày đăng -->
         <div>
           <h2 class="text-2xl font-semibold text-gray-800">Ngày đăng</h2>
-          <p class="text-gray-600 mt-2">{{ new Date(post.created_at).toLocaleDateString('vi-VN') }}</p>
+          <p class="text-gray-600 mt-2">{{ formatDate(post.created_at) }}</p>
         </div>
 
         <!-- Nút quay lại -->
         <div class="flex justify-center mt-6">
           <a
             href="/posts"
-            class="inline-block bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-gray-600 transition-colors"
+            class="inline-block bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors"
           >
             Quay lại danh sách bài viết
           </a>
@@ -92,9 +90,9 @@ export default {
   setup(props) {
     const post = ref({});
     const loading = ref(true);
+    const fallbackImg = '/image/placeholder.jpg';
 
     const fetchPost = async () => {
-      console.log('Đang fetch postId:', props.postId); // Debug
       try {
         const response = await axios.get(`/api/posts/${props.postId}`);
         post.value = response.data;
@@ -105,9 +103,18 @@ export default {
       }
     };
 
+    const fullImage = (path) => {
+      if (!path) return fallbackImg;
+      return path.startsWith('http') ? path : `http://localhost:8000${path}`;
+    };
+
+    const formatDate = (date) => {
+      return date ? new Date(date).toLocaleDateString('vi-VN') : 'Không rõ';
+    };
+
     onMounted(fetchPost);
 
-    return { post, loading };
+    return { post, loading, fallbackImg, fullImage, formatDate };
   },
 };
 </script>

@@ -1,21 +1,23 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
+import { useForm, router, usePage } from '@inertiajs/vue3';
 import axios from 'axios';
-import { router, useForm } from '@inertiajs/vue3';
 
-const user = ref(null);
+const page = usePage();
+const user = computed(() => page.props?.auth?.user || {});
 const posts = ref([]);
 const locations = ref([]);
-const loadingUser = ref(true);
+const loadingUser = ref(false);
 const loadingPosts = ref(true);
 const loadingLocations = ref(true);
 const activeTab = ref('profile');
 const editMode = ref(false);
+
 const postForm = useForm({ title: '', content: '', location_id: '', image: null });
 const form = useForm({ name: '', email: '', avatar: null, bio: '', dob: '' });
 const passwordForm = useForm({ current_password: '', new_password: '', new_password_confirmation: '' });
+
 const errors = ref({
-  user: null,
   posts: null,
   locations: null,
   createPost: null,
@@ -26,59 +28,40 @@ const errors = ref({
 const success = ref(null);
 const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
-onMounted(async () => {
-  const token = localStorage.getItem('auth_token');
-  if (!token) {
-    router.visit('/login');
-    return;
-  }
-
+const fetchPosts = async () => {
   try {
-    const userRes = await axios.get('/api/user', {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    user.value = userRes.data;
+    const res = await axios.get('/user/posts');
+    posts.value = res.data;
+    errors.value.posts = null;
+  } catch (err) {
+    errors.value.posts = 'Lỗi khi tải bài viết';
+    console.error('Fetch posts error:', err);
+  }
+};
+
+onMounted(async () => {
+  try {
+    await fetchPosts();
     form.name = user.value.name;
     form.email = user.value.email;
     form.avatar = null;
     form.bio = user.value.bio || '';
     form.dob = user.value.dob || '';
-
   } catch (err) {
-    if (err.response?.status === 401) {
-      localStorage.removeItem('auth_token');
-      router.visit('/login');
-      return;
-    }
-    errors.value.user = 'Lỗi khi tải thông tin người dùng';
-    console.error(err);
-  } finally {
-    loadingUser.value = false;
+    console.error('Lỗi user:', err);
   }
 
   try {
-    const postsRes = await axios.get('/api/user/posts', {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    posts.value = postsRes.data;
-  } catch (err) {
-    errors.value.posts = 'Lỗi khi tải bài viết';
-    console.error(err);
-  } finally {
-    loadingPosts.value = false;
-  }
-
-  try {
-    const locationsRes = await axios.get('/api/locations', {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    locations.value = locationsRes.data;
+    const locationsRes = await axios.get('/api/locations');
+    locations.value = locationsRes.data.data || locationsRes.data;
   } catch (err) {
     errors.value.locations = 'Lỗi khi tải địa điểm';
     console.error(err);
   } finally {
     loadingLocations.value = false;
   }
+
+  loadingPosts.value = false;
 });
 
 const createPost = () => {
@@ -86,16 +69,14 @@ const createPost = () => {
     errors.value.createPost = 'Vui lòng nhập tiêu đề và nội dung';
     return;
   }
-  postForm.post('/api/posts', {
+  postForm.post('/posts', {
     forceFormData: true,
-    onSuccess: () => {
-      posts.value.unshift(postForm.data());
-      postForm.reset();
-      errors.value.createPost = null;
-      success.value = 'Đăng bài thành công!';
-      activeTab.value = 'posts';
-      setTimeout(() => success.value = null, 3000);
-    },
+    onSuccess: async () => {
+    postForm.reset();
+    success.value = 'Đăng bài thành công!';
+    await fetchPosts();
+    activeTab.value = 'posts';
+},
     onError: (err) => {
       errors.value.createPost = err.message || 'Lỗi khi đăng bài';
       console.error(err);
@@ -103,23 +84,20 @@ const createPost = () => {
   });
 };
 
-const deletePost = async (postId) => {
+const deletePost = (postId) => {
   if (!confirm('Bạn có chắc muốn xóa bài viết này?')) return;
-  const token = localStorage.getItem('auth_token');
-  if (!token) return;
-
-  try {
-    await axios.delete(`/api/posts/${postId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    posts.value = posts.value.filter(post => post.id !== postId);
-    errors.value.deletePost = null;
-    success.value = 'Xóa bài viết thành công!';
-    setTimeout(() => success.value = null, 3000);
-  } catch (err) {
-    errors.value.deletePost = err.response?.data?.message || 'Lỗi khi xóa bài viết';
-    console.error(err);
-  }
+  router.delete(`/posts/${postId}`, {
+    onSuccess: () => {
+      posts.value = posts.value.filter((post) => post.id !== postId);
+      errors.value.deletePost = null;
+      success.value = 'Xóa bài viết thành công!';
+      setTimeout(() => (success.value = null), 3000);
+    },
+    onError: (err) => {
+      errors.value.deletePost = err.response?.data?.message || 'Lỗi khi xóa bài viết';
+      console.error(err);
+    },
+  });
 };
 
 const updateProfile = () => {
@@ -131,13 +109,13 @@ const updateProfile = () => {
     errors.value.updateProfile = 'Email không hợp lệ';
     return;
   }
-  form.post('/api/user', {
+  form.post('/profile', {
+    forceFormData: true,
     onSuccess: () => {
-      user.value = form.data();
       editMode.value = false;
       errors.value.updateProfile = null;
       success.value = 'Cập nhật hồ sơ thành công!';
-      setTimeout(() => success.value = null, 3000);
+      setTimeout(() => (success.value = null), 3000);
     },
     onError: (err) => {
       errors.value.updateProfile = err.message || 'Lỗi khi cập nhật';
@@ -159,12 +137,12 @@ const changePassword = () => {
     errors.value.changePassword = 'Mật khẩu mới và xác nhận không khớp';
     return;
   }
-  passwordForm.post('/api/change-password', {
+  passwordForm.post('/change-password', {
     onSuccess: () => {
       passwordForm.reset();
       errors.value.changePassword = null;
       success.value = 'Đổi mật khẩu thành công!';
-      setTimeout(() => success.value = null, 3000);
+      setTimeout(() => (success.value = null), 3000);
     },
     onError: (err) => {
       errors.value.changePassword = err.message || 'Lỗi khi đổi mật khẩu';
@@ -480,10 +458,10 @@ const handlePostImageChange = (event) => {
               <div class="relative overflow-hidden rounded-xl">
                 <img
                   v-if="post.image"
-                  :src="`${baseUrl}${post.image}`"
+                  :src="`${baseUrl}/${post.image.replace(/^\/+/, '')}`"
                   alt="Post Image"
                   class="w-full h-48 object-cover transition-transform duration-300 hover:scale-110"
-                  @error="event => event.target.src = 'https://via.placeholder.com/150'"
+                  @error="event => event.target.src = '/image/placeholder.jpg'"
                 />
                 <div
                   class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300"
@@ -580,12 +558,20 @@ const handlePostImageChange = (event) => {
             </div>
             <div>
               <label class="block text-gray-700 font-semibold">Địa điểm</label>
-              <input
-                v-model="postForm.location"
-                type="text"
+              <select
+                v-model="postForm.location_id"
                 class="w-full px-4 py-3 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Nhập địa điểm (ví dụ: Hà Nội)"
-              />
+              >
+                <option value="">-- Chọn địa điểm --</option>
+                <option
+                  v-for="location in locations"
+                  :key="location.id"
+                  :value="location.id"
+                >
+                  {{ location.name }}
+                </option>
+              </select>
+
             </div>
             <div>
               <label class="block text-gray-700 font-semibold">Hình ảnh</label>

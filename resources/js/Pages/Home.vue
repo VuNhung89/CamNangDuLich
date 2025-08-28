@@ -1,6 +1,6 @@
 <script setup>
-import { ref, onMounted } from 'vue';
-import { router } from '@inertiajs/vue3';
+import { ref, onMounted, computed } from 'vue';
+import { router, usePage } from '@inertiajs/vue3';
 import axios from 'axios';
 import { Carousel, Slide, Pagination, Navigation } from 'vue3-carousel';
 import 'vue3-carousel/dist/carousel.css';
@@ -8,7 +8,7 @@ import Header from '@/Components/Header.vue';
 import Footer from '@/Components/Footer.vue';
 
 // Khởi tạo biến
-const user = ref(null);
+// const user = ref(null);
 const locations = ref([]);
 const hotels = ref([]);
 const posts = ref([]);
@@ -25,17 +25,16 @@ onMounted(async () => {
   loading.value = true;
 
   try {
-    // Lấy thông tin người dùng từ session
-    const res = await axios.get('/api/user'); // Laravel xử lý qua session cookie
-    user.value = res.data;
+    // Lấy user từ session
+    const user = computed(() => usePage().props.auth.user);
 
-    // Nếu là admin, chuyển hướng đến dashboard
-    if (user.value.role === 'admin') {
+    // Nếu là admin, chuyển hướng
+    if (user.value?.role === 'admin') {
       router.visit('/dashboard');
       return;
     }
 
-    // Lấy dữ liệu homepage
+    // Gọi song song API
     const [locationsRes, hotelsRes, postsRes, eventsRes, toursRes, videosRes] = await Promise.all([
       axios.get('/api/locations'),
       axios.get('/api/hotels'),
@@ -45,23 +44,32 @@ onMounted(async () => {
       axios.get('/api/videos'),
     ]);
 
-    locations.value = locationsRes.data.data || locationsRes.data;
-    hotels.value = hotelsRes.data.data || hotelsRes.data;
-    posts.value = postsRes.data.data.map(post => ({
+    // Hàm xử lý an toàn dữ liệu dạng mảng
+    const safeArray = (data) => Array.isArray(data) ? data : [];
+
+    // Gán dữ liệu vào biến
+    locations.value = safeArray(locationsRes.data?.data || locationsRes.data);
+    hotels.value = safeArray(hotelsRes.data?.data || hotelsRes.data);
+    tours.value = safeArray(toursRes.data?.data || toursRes.data);
+    videos.value = safeArray(videosRes.data?.data || videosRes.data);
+
+    // Bài viết: tính toán thêm
+    const rawPosts = safeArray(postsRes.data?.data || postsRes.data);
+    posts.value = rawPosts.map(post => ({
       ...post,
       likes_count: post.likes?.length || 0,
       comments_count: post.comments?.length || 0,
       average_rating: post.ratings?.length
         ? (post.ratings.reduce((sum, r) => sum + r.rating, 0) / post.ratings.length).toFixed(1)
         : 0,
-    })) || postsRes.data;
-    events.value = (eventsRes.data.data || eventsRes.data).sort((a, b) => new Date(a.date) - new Date(b.date));
-    tours.value = toursRes.data.data || toursRes.data;
-    videos.value = videosRes.data.data || videosRes.data;
+    }));
+
+    // Sự kiện: sort theo ngày
+    const rawEvents = safeArray(eventsRes.data?.data || eventsRes.data);
+    events.value = rawEvents.sort((a, b) => new Date(a.date) - new Date(b.date));
 
   } catch (err) {
     if (err.response?.status === 401) {
-      // Nếu chưa đăng nhập thì chuyển về login
       router.visit('/login');
     }
     console.error('Lỗi khi tải dữ liệu:', err);

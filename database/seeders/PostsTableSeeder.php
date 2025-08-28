@@ -199,5 +199,33 @@ HTML,
             'status' => 'approved',
             'image' => '/image/hoian.avif',
         ]);
+
+        Post::create([
+            'user_id' => 2,
+            'location_id' => 5,
+            'title' => 'Phố cổ Hội An lung linh về đêm',
+            'content' => <<<HTML
+<h2>Phố cổ Hội An lung linh về đêm</h2>
+<p>Hội An, phố cổ di sản thế giới tại Quảng Nam, đẹp mộng mơ với những con phố lát đá và đèn lồng rực rỡ. Ban đêm, Hội An trở nên huyền ảo, hòa quyện giữa nét cổ kính và không khí hiện đại, khiến du khách không khỏi xao lòng.</p>
+<p><strong>1. Trải nghiệm đêm Hội An</strong><br>
+- <strong>Dạo phố đèn lồng</strong>: Các con phố như Nguyễn Thị Minh Khai, Trần Phú lung linh với hàng trăm đèn lồng đủ màu sắc.<br>
+- <strong>Thả đèn hoa đăng</strong>: ễ hội hoa đăng Hội An được tổ chức trên dòng sông Hoài, nằm hiền hoà giữa lòng phố cổ. Đây cũng là con sông gắn với nhiều hoạt động sinh hoạt, văn hoá của người dân nơi đây. Sông Hoài vốn êm đềm, bình lặng nhưng vào những đêm trăng rằm, nơi đây sẽ trở nên náo nhiệt, thơ mộng hơn bởi hàng trăm lượt khách đổ về gửi lời nguyện ước bên những chiếc đèn hoa đăng rực rỡ.<br>
+Thả đèn hoa đăng Hội An là một nét đẹp trong văn hoá tâm linh của người dân phố cổ nói riêng và của người Việt Nam nói chung. Hoạt động thả đèn được xem là để đem lại sức khoẻ và tài lộc cho mọi người. Khi những chiếc đèn được thả xuống nghĩa là thắp lên hy vọng về một tương lai nhiều may mắn, bình an cho gia đình, người thân. Đây là lễ hội ở Hội An được nhiều du khách mong chờ nhất. <br>
+- <strong>Nghe nhạc ven sông</strong>: Các quán cà phê như Faifo Coffee hay Reaching Out Tea House mang đến không gian thư giãn với nhạc du dương.</p>
+<img src="https://statics.vinpearl.com/den-long-hoi-an-1_1628212083.png" alt="Đèn lồng Hội An ban đêm">
+<p><strong>2. Địa điểm tham quan nổi bật</strong><br>
+- <strong>Chùa Cầu</strong>: Chùa Cầu là viên ngọc giữa lòng Hội An. Cầu xây dựng vào cuối thế kỷ 16 và được gọi là cầu Nhật Bản. Ở giữa cầu có một ngôi miếu nhỏ thờ Huyền Thiên Đại Đế. Cầu có mái che khá độc đáo cùng các kết cấu, họa tiết trang trí. Thể hiện sự kết hợp hài hòa giữa các phong cách kiến trúc Việt, Hoa, Nhật, và cả phương Tây.<br>
+- <strong>Chợ đêm Hội An</strong>: Nơi thưởng thức ẩm thực như cao lầu, bánh mì Phượng, và mua quà lưu niệm.<br>
+- <strong>Làng gốm Thanh Hà</strong>: Vào thế kỷ 16, 17, Thanh Hà là một ngôi làng rất thịnh đạt, nổi tiếng về các mặt hàng gốm, đất nung. Được trao đổi, bán buôn khắp các tỉnh miền Trung Việt Nam. Nghề gốm của làng có nguồn gốc xuất xứ từ Thanh Hóa. Sau khi tiếp thu được một số vốn liếng kỹ thuật thì đã hình thành làng gốm như ngày nay. Sản phẩm chủ yếu là các đồ dùng phục vụ đời sống sinh hoạt hàng ngày như chén, bát, chum, vại, bình hoa, chậu cảnh, hình thù các con giống… mang nhiều kiểu dáng, màu sắc rất phong phú và đặc biệt nhẹ hơn so với các sản phẩm cùng loại của địa phương khác.</p>
+<img src="https://cdn3.ivivu.com/2023/10/du-lich-hoi-an-ivivu-img31.jpg" alt="làng gốm Thanh Hà">
+<p><strong>3. Gợi ý lưu trú</strong><br>
+- <strong>Khách sạn</strong>: Anantara Hoi An Resort, giá từ 2.500.000 VND/phòng/đêm, phong cách cổ điển.<br>
+- <strong>Homestay</strong>: Under The Coconut Tree, giá từ 400.000 VND/phòng/đêm, gần gũi thiên nhiên.<br>
+- <strong>Resort</strong>: Vinpearl Resort & Golf Nam Hoi An, giá từ 2.000.000 VND/phòng/đêm, tiện ích cao cấp.</p>
+<img src="https://statics.vinpearl.com/kinh-nghiem-du-lich-hoi-an-10_1661245530.jpg" alt="Sông Hoài ban đêm">
+HTML,
+            'status' => 'pending',
+            'image' => '/image/hoian.avif',
+        ]);
     }
 }

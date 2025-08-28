@@ -1,6 +1,6 @@
 <script setup>
-import { useForm, router } from '@inertiajs/vue3';
-import { ref, onMounted } from 'vue';
+import { useForm } from '@inertiajs/vue3';
+import { onMounted } from 'vue';
 
 const form = useForm({
   email: '',
@@ -10,8 +10,7 @@ const form = useForm({
 
 const submit = async () => {
   try {
-    await axios.get('/sanctum/csrf-cookie'); // bắt buộc lấy csrf cookie trước khi gửi form
-
+    await axios.get('/sanctum/csrf-cookie');
     form.post('/login', {
       onSuccess: () => {
         form.reset('password');

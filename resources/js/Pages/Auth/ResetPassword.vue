@@ -1,6 +1,5 @@
 <script setup>
 import { useForm } from '@inertiajs/vue3';
-import axios from 'axios';
 import { ref } from 'vue';
 
 const props = defineProps({
@@ -17,18 +16,16 @@ const form = useForm({
 const message = ref(null);
 
 const submit = async () => {
-  try {
-    const response = await axios.post('/reset-password', form.data());
-    message.value = response.data.message;
-    form.reset();
-    setTimeout(() => {
-      window.location.href = '/login';
-    }, 2000);
-  } catch (error) {
-    form.errors = error.response?.data?.errors || {
-      email: error.response?.data?.message || 'Đã có lỗi xảy ra.',
-    };
-  }
+ form.post('/reset-password', {
+  onSuccess: () => {
+    message.value = 'Đặt lại mật khẩu thành công!';
+    setTimeout(() => window.location.href = '/login', 2000);
+  },
+  onError: (errors) => {
+    form.errors = errors;
+  },
+});
+
 };
 </script>
 

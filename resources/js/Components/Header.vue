@@ -1,53 +1,19 @@
 <script setup>
-import { ref, onMounted } from 'vue';
-import axios from 'axios';
-import { router } from '@inertiajs/vue3';
+import { ref, computed } from 'vue';
+import { usePage, router } from '@inertiajs/vue3';
 
-const isAuthenticated = ref(false);
-const user = ref(null);
 const searchQuery = ref('');
 const showDropdown = ref(false);
 
-const getCsrfToken = () => {
-  const token = document.querySelector('meta[name="csrf-token"]')?.content;
-  if (!token) console.error('CSRF token not found');
-  return token;
-};
-
-onMounted(async () => {
-  const token = localStorage.getItem('auth_token');
-  if (token) {
-    try {
-      const response = await axios.get('/api/user', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      isAuthenticated.value = true;
-      user.value = response.data;
-    } catch (error) {
-      console.error('Lỗi khi lấy thông tin người dùng:', error);
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('remembered_email');
-    }
-  }
-});
+// ✅ Lấy user từ props (Inertia session)
+const user = computed(() => usePage().props.auth.user);
+const isAuthenticated = computed(() => !!user.value);
 
 const logout = async () => {
-  console.log('Đăng xuất được gọi'); // Debug
   try {
-    await axios.post('/api/logout', {}, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
-        'X-CSRF-TOKEN': getCsrfToken(),
-      },
-    });
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('remembered_email');
-    isAuthenticated.value = false;
-    user.value = null;
-    showDropdown.value = false;
-    router.visit('/login');
+    await router.post('/logout'); // Laravel Inertia session logout
   } catch (error) {
-    console.error('Đăng xuất thất bại:', error.response?.data || error.message);
+    console.error('Đăng xuất thất bại:', error);
   }
 };
 
@@ -58,7 +24,6 @@ const search = () => {
 };
 
 const toggleDropdown = () => {
-  console.log('Toggle dropdown:', !showDropdown.value); // Debug
   showDropdown.value = !showDropdown.value;
 };
 </script>
@@ -77,6 +42,7 @@ const toggleDropdown = () => {
           <a href="/tours" class="text-gray-700 hover:text-yellow-600">Tour</a>
           <a href="/hotels" class="text-gray-700 hover:text-yellow-600">Khách sạn</a>
           <a href="/posts" class="text-gray-700 hover:text-yellow-600">Mẹo du lịch</a>
+          <a href="/events" class="text-gray-700 hover:text-yellow-600">Sự kiện</a>
         </div>
         <!-- Tìm kiếm và Auth -->
         <div class="flex items-center space-x-4">
@@ -106,6 +72,13 @@ const toggleDropdown = () => {
               >
                 Hồ sơ
               </a>
+              <a
+                href="/my-bookings"
+                class="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+              >
+                Lịch sử booking
+              </a>
+
               <button
                 @click="logout"
                 class="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"

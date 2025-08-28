@@ -1,43 +1,70 @@
-<template>
-  <div class="p-4 bg-slate-50">
-    <h1 class="text-3xl font-bold text-center text-gray-600 mb-6">Danh sách địa điểm</h1>
+<script setup>
+import { ref, onMounted } from 'vue'
+import axios from 'axios'
+import Header from '@/Components/Header.vue';
+import Footer from '@/Components/Footer.vue';
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+const locations = ref([])
+const loading = ref(true)
+
+onMounted(async () => {
+  try {
+    const res = await axios.get('/api/locations')
+    locations.value = res.data
+  } catch (error) {
+    console.error('Lỗi khi lấy danh sách địa điểm:', error)
+  } finally {
+    loading.value = false
+  }
+})
+</script>
+
+<template>
+  <div class="mt-0">
+      <Header/>
+    </div>
+  <div class="p-6 bg-slate-100 min-h-screen">
+    <h1 class="text-3xl font-semibold text-center text-gray-600 mb-10 mt-14">Danh sách địa điểm</h1>
+
+    <!-- Loading -->
+    <div v-if="loading" class="text-center text-gray-500">Đang tải địa điểm...</div>
+
+    <!-- Danh sách -->
+    <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
       <div
         v-for="location in locations"
         :key="location.id"
         class="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow"
       >
-        <!-- Tiêu đề -->
-        <h2 class="text-xl font-semibold text-gray-600 mb-2">{{ location.title }}</h2>
+        <h2 class="text-xl font-semibold text-gray-700 mb-2">{{ location.name }}</h2>
 
-        <!-- Hình ảnh -->
         <div v-if="location.image" class="mb-4">
           <img
-            :src="location.image"
+            :src="`http://localhost:8000${location.image}`"
             alt="Hình ảnh địa điểm"
             class="w-full h-48 object-cover rounded-lg"
-          >
+            @error="event => event.target.src = 'http://localhost:8000/image/placeholder.jpg'"
+          />
         </div>
 
-        <!-- Mô tả & Booking -->
-        <div class="space-y-2">
+        <div class="space-y-2 text-sm">
           <div>
-            <h3 class="text-lg font-medium text-gray-800">Mô tả</h3>
-            <p class="text-gray-600">{{ location.description.substring(0, 100) }}...</p>
+            <h3 class="font-medium text-gray-800">Mô tả</h3>
+            <p class="text-gray-600">
+              {{ location.description ? location.description.substring(0, 100) + '...' : 'Chưa có mô tả' }}
+            </p>
           </div>
 
           <div>
-            <h3 class="text-lg font-medium text-gray-800">Booking</h3>
+            <h3 class="font-medium text-gray-800">Booking</h3>
             <p class="text-gray-600">{{ location.booking_info || 'Chưa có thông tin' }}</p>
           </div>
         </div>
 
-        <!-- Nút Xem chi tiết -->
         <div class="flex justify-end mt-4">
           <a
             :href="`/locations/${location.id}`"
-            class="inline-block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-200 transition-colors"
+            class="inline-block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors"
           >
             Xem chi tiết
           </a>
@@ -45,35 +72,11 @@
       </div>
     </div>
 
-    <!-- Trạng thái khi không có dữ liệu -->
-    <p v-if="!locations.length" class="text-center text-gray-500 mt-6">
+    <p v-if="!locations.length && !loading" class="text-center text-gray-500 mt-6">
       Chưa có địa điểm nào!
     </p>
   </div>
+  <div class="mt-6">
+      <Footer/>
+    </div>
 </template>
-
-<script>
-import { ref, onMounted } from 'vue';
-import axios from 'axios';
-import DefaultLayout from '@/Layouts/DefaultLayout.vue'; 
-
-export default {
-  layout: DefaultLayout,
-  setup() {
-    const locations = ref([]);
-
-    const fetchLocations = async () => {
-      try {
-        const response = await axios.get('/api/locations');
-        locations.value = response.data;
-      } catch (error) {
-        console.error('Lỗi khi lấy danh sách địa điểm:', error);
-      }
-    };
-
-    onMounted(fetchLocations);
-
-    return { locations };
-  }
-};
-</script>
